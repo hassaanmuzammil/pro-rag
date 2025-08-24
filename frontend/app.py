@@ -5,7 +5,7 @@ import chainlit.data as cl_data
 from chainlit.data.sql_alchemy import SQLAlchemyDataLayer
 from sqlalchemy import select
 
-# from src.builder import pipeline
+from src.builder import pipeline
 from src.config import CHAINLIT_DB_URL
 from src.db.session import AsyncSessionFactory
 from src.db.models import UploadedFile
@@ -19,9 +19,9 @@ async def set_starters():
 
 @cl.on_chat_start
 async def on_chat_start():
-    # cl.user_session.set("history", [])
-    # cl.user_session.set("pipeline", pipeline)
-    # cl.user_session.set("processor", pipeline.processor)
+    cl.user_session.set("history", [])
+    cl.user_session.set("pipeline", pipeline)
+    cl.user_session.set("processor", pipeline.processor)
     actions = [
         cl.Action(
             name="get_files_action",
@@ -61,66 +61,65 @@ def on_stop():
 
 @cl.on_message
 async def on_message(message: cl.Message):
-    await cl.Message(content=f"Echo: {message.content}").send()
-    # history = cl.user_session.get("history")
-    # pipeline = cl.user_session.get("pipeline")
-    # processor = cl.user_session.get("processor")    
-    # chat_history = "\n".join(f"{item['role'].capitalize()}: {item['content']}" for item in history[-5:])
-    # user_message = message.content
-    # history.append(
-    #     {
-    #         "role": "user",
-    #         "content": user_message
-    #     }
-    # )
-    # rewritten_query = ""
-    # async with cl.Step("Query Rewrite") as step:
-    #     rewritten_query, fallback_message = await processor.query_rewrite(
-    #         chat_history=chat_history,
-    #         message=user_message
-    #     )
-    #     step.output = rewritten_query if rewritten_query else "Not applicable"
+    history = cl.user_session.get("history")
+    pipeline = cl.user_session.get("pipeline")
+    processor = cl.user_session.get("processor")    
+    chat_history = "\n".join(f"{item['role'].capitalize()}: {item['content']}" for item in history[-5:])
+    user_message = message.content
+    history.append(
+        {
+            "role": "user",
+            "content": user_message
+        }
+    )
+    rewritten_query = ""
+    async with cl.Step("Query Rewrite") as step:
+        rewritten_query, fallback_message = await processor.query_rewrite(
+            chat_history=chat_history,
+            message=user_message
+        )
+        step.output = rewritten_query if rewritten_query else "Not applicable"
 
-    # if not rewritten_query:
-    #     res = fallback_message
-    #     response = cl.Message(content=res)
-    #     await response.send()
-    # else:
-    #     cl.user_session.set("stop", False)
-    #     sources = await pipeline.retrieve(rewritten_query, expand_context=True)
-    #     context = processor.build_context(sources)
-    #     stream = processor.final_answer(message=rewritten_query, context=context)
-    #     response = cl.Message(content="")
-    #     res = ""
-    #     async for chunk in stream:
-    #         if cl.user_session.get("stop"):
-    #             break
-    #         res += chunk
-    #         await response.stream_token(chunk)
-    #     elements = []
-    #     names = []
-    #     for source in sources:
-    #         name = f"Source: {source.get('name')} (page {source.get('page')})"
-    #         content = source.get("content")
-    #         names.append(name)
-    #         element = cl.Text(
-    #             content=content, name=name, display="side"
-    #         )
-    #         elements.append(element)
-    #     names = "\n".join(names)
-    #     result = f"{res}\n\nSources:\n{names}"
-    #     response.content = result
-    #     response.elements = elements
-    #     await response.update()
-    #     await response.send()
+    if not rewritten_query:
+        res = fallback_message
+        response = cl.Message(content=res)
+        await response.send()
+    else:
+        cl.user_session.set("stop", False)
+        sources = await pipeline.retrieve(rewritten_query, expand_context=True)
+        context = processor.build_context(sources)
+        stream = processor.final_answer(message=rewritten_query, context=context)
+        response = cl.Message(content="")
+        res = ""
+        async for chunk in stream:
+            if cl.user_session.get("stop"):
+                break
+            res += chunk
+            await response.stream_token(chunk)
+        elements = []
+        names = []
+        for source in sources:
+            name = f"Source: {source.get('name')} (page {source.get('page')})"
+            content = source.get("content")
+            names.append(name)
+            element = cl.Text(
+                content=content, name=name, display="side"
+            )
+            elements.append(element)
+        names = "\n".join(names)
+        result = f"{res}\n\nSources:\n{names}"
+        response.content = result
+        response.elements = elements
+        await response.update()
+        await response.send()
 
-    # history.append(
-    #     {
-    #         "role": "assistant",
-    #         "content": res
-    #     }
-    # )
-    # cl.user_session.set("history", history)
+    history.append(
+        {
+            "role": "assistant",
+            "content": res
+        }
+    )
+    cl.user_session.set("history", history)
 
 @cl.on_chat_end
 def end():
@@ -150,7 +149,7 @@ async def delete_file_action(action: cl.Action):
 async def confirm_delete_file(action: cl.Action):
     filename = action.payload.get("filename")
     if filename:
-        # TODO: Delete file logic here
+        # TODO: Implement delete file logic (use `delete_file` from src.api.file)
         await cl.Message(content=f"Deleted file: {filename}").send()
     else:
         await cl.Message(content="No filename provided.").send()
@@ -166,13 +165,12 @@ async def upload_file_action(action: cl.Action):
 @cl.action_callback("confirm_upload_file")
 async def confirm_upload_file(action: cl.Action):
     filename = action.payload.get("filename")
-    file_data = action.payload.get("file")  # base64 encoded
-
+    file_data = action.payload.get("file")
     if filename and file_data:
         # Decode the base64 to bytes
         content = base64.b64decode(file_data.split(",")[1])
         size_kb = len(content) / 1024  # size in KB
-
+        # TODO: Implement file upload logic (use `upload_file` from src.api.file)
         await cl.Message(
             content=f"File '{filename}' uploaded successfully ({size_kb:.2f} KB)"
         ).send()
