@@ -5,6 +5,7 @@ build/
 dist/
 wheels/
 *.egg-info
+*.pyc
 
 # Virtual environments
 .venv
@@ -12,3 +13,4 @@ wheels/
 # Others
 .DS_Store
 .env
+.files/

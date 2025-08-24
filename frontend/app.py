@@ -86,7 +86,7 @@ async def on_message(message: cl.Message):
         await response.send()
     else:
         cl.user_session.set("stop", False)
-        sources = await pipeline.retrieve(rewritten_query, expand_context=True)
+        sources = await pipeline.retrieve(rewritten_query, expand_context=False)
         context = processor.build_context(sources)
         stream = processor.final_answer(message=rewritten_query, context=context)
         response = cl.Message(content="")

@@ -72,7 +72,8 @@ retriever_factory = RetrieverFactory(
     vectorstore=vectorstore,
     docstore=docstore
 )
-query_retriever = retriever_factory.create(rerank=True, model_rerank=model_rerank)
+# query_retriever = retriever_factory.create(rerank=True, model_rerank=model_rerank)
+query_retriever = retriever_factory.create(rerank=False) # for faster testing
 index_retriever = retriever_factory.create(rerank=False)
 
 processor = LLMProcessor(
