@@ -17,12 +17,12 @@ This project implements a **Retrieval-Augmented Generation (RAG)** application w
 uv pip install -e .
 ```
 
-## Run BE
+## Run BE
 ```sh
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-## Run Chainlit UI
+## Run Chainlit UI
 ```sh
 cd frontend
 PYTHONPATH=.. chainlit run app.py --host 0.0.0.0 --port 8888
