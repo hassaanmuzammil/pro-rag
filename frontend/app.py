@@ -98,8 +98,8 @@ async def on_message(message: cl.Message):
             await response.stream_token(chunk)
         elements = []
         names = []
-        for source in sources:
-            name = f"Source: {source.get('name')} (page {source.get('page')})"
+        for i, source in enumerate(sources):
+            name = f"Source {i}: {source.get('name')} (page {source.get('page')})"
             content = source.get("content")
             names.append(name)
             element = cl.Text(
