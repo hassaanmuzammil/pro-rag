@@ -1,5 +1,9 @@
 # Production-ready RAG Application
 
+## Detailed Design
+
+[Detailed Design](https://deepwiki.com/hassaanmuzammil/pro-rag)
+
 This project implements a **Retrieval-Augmented Generation (RAG)** application with a fully production-ready stack.
 
 ## 🚀 Tools & Technologies
